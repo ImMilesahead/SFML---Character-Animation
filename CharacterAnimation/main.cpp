@@ -33,6 +33,8 @@ float y = 100.0f;   // character's Y coorident
 float velX = 100.0f;    // character's velocity in the X direction in pixels per second
 float velY = 100.0f;    // character's velocity in the Y direction in pixels per second
 
+int cWidth = 32;        // character's width
+int cHeight = 48;       // character's height
 
 void setup(){
     // Initialize Main Window
@@ -54,7 +56,7 @@ void update(){
         timer = 0;
     }
     // restart the walking animation
-    if (source.x * 32 >= spriteSheet.getSize().x)
+    if (source.x * cWidth >= spriteSheet.getSize().x)
         source.x = 0;
 
 
@@ -122,14 +124,14 @@ void update(){
         y = 0;
     if (x <= 0)
         x = 0;
-    if (y >= HEIGHT-48)
-        y = HEIGHT-48;
-    if (x >= WIDTH-32)
-        x = WIDTH-32;
+    if (y >= HEIGHT-cHeight)
+        y = HEIGHT-cHeight;
+    if (x >= WIDTH-cWidth)
+        x = WIDTH-cWidth;
 
     // Draw the sprite
     character.setPosition(x, y);
-    character.setTextureRect(sf::IntRect(source.x * 32, source.y * 48, 32, 48));
+    character.setTextureRect(sf::IntRect(source.x * cWidth, source.y * cHeight, cWidth, cHeight));
     window.draw(character);
 }
 
