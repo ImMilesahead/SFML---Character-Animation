@@ -4,7 +4,9 @@
 #define WIDTH 800
 #define HEIGHT 600
 
-#define DEBUG 1
+
+// This is a macro used for debugging code in an easier way
+#define DEBUG 0
 #if DEBUG
 #define LOG(x) std::cout << x << std::endl;
 #else
@@ -13,46 +15,50 @@
 
 // Main Window
 sf::RenderWindow window;
-
-sf::Texture texture;
-sf::Sprite sprite(texture);
-sf::RectangleShape background(sf::Vector2f(WIDTH, HEIGHT));
-enum Directions {Down, Left, Right, Up};
-sf::Vector2i source(0, Left);   // Direction
-sf::Time deltaTime;
-float timer = 0.0f;
+sf::Texture spriteSheet;    // spritesheet for the character
+sf::Sprite character(spriteSheet);     //actual sprite to be drawn to the screen
+sf::RectangleShape background(sf::Vector2f(WIDTH, HEIGHT));     // background to be drawn first
+enum Directions {Down, Left, Right, Up};    // directions to tell the character what way to face
+sf::Vector2i source(0, Left);   // Direction the character is facing and where along the
+                                //walking animation they are
+sf::Time deltaTime;     // time inbetween frames
+float timer = 0.0f;     // timer to be used for timing things
 bool isMovingUp = false;        // gotta be a better way
-bool isMovingDown = false;
-bool isMovingRight = false;
-bool isMovingLeft = false;
-float x = 100.0f, y = 100.0f;   // use vector
-float velX = 100.0f;        //use vector
-float velY = 100.0f;
+bool isMovingDown = false;      // see if those keys are pressed down
+bool isMovingRight = false;     // and if the player is moving in that direction
+bool isMovingLeft = false;      // used for determining which sprite to show
+// Use Vectors here
+float x = 100.0f;   // characters x coorident
+float y = 100.0f;   // character's Y coorident
+float velX = 100.0f;    // character's velocity in the X direction in pixels per second
+float velY = 100.0f;    // character's velocity in the Y direction in pixels per second
 
 
 void setup(){
     // Initialize Main Window
     window.create(sf::VideoMode(WIDTH, HEIGHT), "My First SFML Game",
                   sf::Style::Titlebar | sf::Style::Close);
-    if (texture.loadFromFile("SpriteSheet.png"))
-        sprite.setTexture(texture, true);
+    if (spriteSheet.loadFromFile("SpriteSheet.png"))
+        character.setTexture(spriteSheet, true);
     background.setFillColor(sf::Color(255, 255, 255));
 }
 
 void update(){
-    // Draw the sprite
-    sprite.setPosition(x, y);
-    sprite.setTextureRect(sf::IntRect(source.x * 32, source.y * 48, 32, 48));
-    window.draw(sprite);
+    // increase the timer
     timer += deltaTime.asSeconds();
+
+    // limit the walking animation so it does not go to fast or slow
     if (timer >= 0.1){
         if (isMovingUp || isMovingDown || isMovingLeft || isMovingRight)
             source.x++;
         timer = 0;
     }
-    if (source.x * 32 >= texture.getSize().x)
+    // restart the walking animation
+    if (source.x * 32 >= spriteSheet.getSize().x)
         source.x = 0;
 
+
+    // see what keys are being pressed and toggle the corisponding flags
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
             isMovingUp = true;
             //LOG("UP")
@@ -77,6 +83,10 @@ void update(){
     }else{
         isMovingLeft = false;
     }
+
+    // Using this to make sure the direction the character is moving
+    // is always the direction the sprite is facing
+    // and to make it only go one direction at a time - no diagonal
     if (isMovingDown){
         source.y = Down;
         y += velY * deltaTime.asSeconds();
@@ -102,19 +112,25 @@ void update(){
         isMovingUp = false;
         isMovingDown = false;
     }
+
+    // reset the walking animation if we are not moving
     if (!(isMovingDown || isMovingLeft || isMovingRight || isMovingUp))
         source.x = 0;
 
-    if (y <= 0){
+    // Boundries
+    if (y <= 0)
         y = 0;
-
-    }
     if (x <= 0)
         x = 0;
     if (y >= HEIGHT-48)
         y = HEIGHT-48;
     if (x >= WIDTH-32)
         x = WIDTH-32;
+
+    // Draw the sprite
+    character.setPosition(x, y);
+    character.setTextureRect(sf::IntRect(source.x * 32, source.y * 48, 32, 48));
+    window.draw(character);
 }
 
 int main()
@@ -134,24 +150,6 @@ int main()
                 case sf::Event::Closed:
                     window.close();
                     break;
-                /*case sf::Event::KeyPressed:
-                    if (event.key.code == sf::Keyboard::Up){
-                        source.y = Up;
-                        LOG("Up")
-                    }
-                    else if (event.key.code == sf::Keyboard::Down){
-                        source.y = Down;
-                        LOG("Down")
-                    }
-                    else if (event.key.code == sf::Keyboard::Right){
-                        source.y = Right;
-                        LOG("Right");
-                    }
-                    else if (event.key.code == sf::Keyboard::Left){
-                        source.y = Left;
-                        LOG("Left")
-                    }
-                    break;*/
             }
 
         }
