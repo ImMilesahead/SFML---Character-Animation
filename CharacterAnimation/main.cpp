@@ -1,170 +1,90 @@
 #include <SFML/Graphics.hpp>
-#include <iostream>
 
 #define WIDTH 800
 #define HEIGHT 600
 
-
-// This is a macro used for debugging code in an easier way
-#define DEBUG 0
-#if DEBUG
-#define LOG(x) std::cout << x << std::endl;
-#else
-#define LOG(x)
-#endif // DEBUG
-
-// Main Window
-sf::RenderWindow window;
-sf::Texture spriteSheet;    // spritesheet for the character
-sf::Sprite character(spriteSheet);     //actual sprite to be drawn to the screen
-sf::RectangleShape background(sf::Vector2f(WIDTH, HEIGHT));     // background to be drawn first
-enum Directions {Down, Left, Right, Up};    // directions to tell the character what way to face
-sf::Vector2i source(0, Left);   // Direction the character is facing and where along the
-                                //walking animation they are
-sf::Time deltaTime;     // time inbetween frames
-float timer = 0.0f;     // timer to be used for timing things
-bool isMovingUp = false;        // gotta be a better way
-bool isMovingDown = false;      // see if those keys are pressed down
-bool isMovingRight = false;     // and if the player is moving in that direction
-bool isMovingLeft = false;      // used for determining which sprite to show
-// Use Vectors here
-float x = 100.0f;   // characters x coorident
-float y = 100.0f;   // character's Y coorident
-float velX = 100.0f;    // character's velocity in the X direction in pixels per second
-float velY = 100.0f;    // character's velocity in the Y direction in pixels per second
-
-int cWidth = 32;        // character's width
-int cHeight = 48;       // character's height
-
-void setup(){
-    // Initialize Main Window
-    window.create(sf::VideoMode(WIDTH, HEIGHT), "My First SFML Game",
-                  sf::Style::Titlebar | sf::Style::Close);
-    if (spriteSheet.loadFromFile("SpriteSheet.png"))
+class Character{
+private:
+    float timer = 0.0f;
+    float animSpeed = 0.05f;
+    int top, left, right, bottom;
+    enum Directions {Up, Left, Down, Right};
+    sf::RenderWindow *window;
+    sf::Time *deltaTime;
+    sf::Vector2f position;
+    sf::Vector2f velocity;
+    sf::Vector2i size;
+    sf::Texture spriteSheet;
+    sf::Sprite character;
+    sf::Vector2i source;
+public:
+    Character(sf::RenderWindow *window, sf::Time *deltaTime){
+        if (spriteSheet.loadFromFile("spritesheet.png"))
         character.setTexture(spriteSheet, true);
-    background.setFillColor(sf::Color(255, 255, 255));
-}
-
-void update(){
-    // increase the timer
-    timer += deltaTime.asSeconds();
-
-    // limit the walking animation so it does not go to fast or slow
-    if (timer >= 0.1){
-        if (isMovingUp || isMovingDown || isMovingLeft || isMovingRight)
-            source.x++;
-        timer = 0;
+        this -> window = window;
+        this -> deltaTime = deltaTime;
+        source = sf::Vector2i(0, Left);
+        position = sf::Vector2f(75.0f, 75.0f);
+        size = sf::Vector2i(64, 64);
+        character.setTexture(spriteSheet);
+        velocity = sf::Vector2f(100.0f, 100.0f);
     }
-    // restart the walking animation
-    if (source.x * cWidth >= spriteSheet.getSize().x)
-        source.x = 0;
-
-
-    // see what keys are being pressed and toggle the corisponding flags
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
-            isMovingUp = true;
-            //LOG("UP")
-    }else{
-        isMovingUp = false;
+    void animate(){
+        if (source.x * size.x >= spriteSheet.getSize().x)
+            source.x = 0;       // restart the walking animation
+        bool moving = true;     // see what keys are being pressed and move accordingly
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
+            source.y = Up;
+            position.y -= velocity.y * (*deltaTime).asSeconds();
+        }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
+            source.y = Down;
+            position.y += velocity.y * (*deltaTime).asSeconds();
+        }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
+            source.y = Right;
+            position.x += velocity.x * (*deltaTime).asSeconds();
+        }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
+            source.y = Left;
+            position.x -= velocity.x * (*deltaTime).asSeconds();
+        }else{
+            moving = false;
+        }
+        timer += (*deltaTime).asSeconds();  // increase the timer
+        if (timer >= animSpeed){    // limit the walking animation so it does not go to fast or slow
+            if (moving)
+                source.x++;
+            timer = 0;
+        }
+        if (!moving)        // reset the walking animation if we are not moving
+            source.x = 0;
+        if (position.y <= 0)        // Check Boundries
+            position.y = 0;
+        else if (position.y >= HEIGHT-size.y)
+            position.y = HEIGHT-size.y;
+        if (position.x <= 0)
+            position.x = 0;
+        else if (position.x >= WIDTH-size.x)
+            position.x = WIDTH-size.x;
+        character.setPosition(position.x, position.y);      // Set the sprite's position
+        character.setTextureRect(sf::IntRect(source.x * size.x, source.y * size.y, size.x, size.y));        // Select which sprite from the sprite sheet we will be using
+        (*window).draw(character);      // Draw the sprite
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
-            isMovingDown = true;
-            //LOG("Down")
-    }else{
-        isMovingDown = false;
+    void update(){
+        this -> animate();
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
-            isMovingRight = true;
-            //LOG("Right")
-    }else{
-        isMovingRight = false;
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
-            isMovingLeft = true;
-            //LOG("Left")
-    }else{
-        isMovingLeft = false;
-    }
-
-    // Using this to make sure the direction the character is moving
-    // is always the direction the sprite is facing
-    // and to make it only go one direction at a time - no diagonal
-    if (isMovingDown){
-        source.y = Down;
-        y += velY * deltaTime.asSeconds();
-        isMovingLeft = false;
-        isMovingRight = false;
-        isMovingUp = false;
-    }else if (isMovingUp){
-        source.y = Up;
-        y -= velY * deltaTime.asSeconds();
-        isMovingLeft = false;
-        isMovingRight = false;
-        isMovingDown = false;
-    }else if (isMovingLeft){
-        source.y = Left;
-        x -= velX * deltaTime.asSeconds();
-        isMovingUp = false;
-        isMovingRight = false;
-        isMovingDown = false;
-    }else if (isMovingRight){
-        source.y = Right;
-        x += velX * deltaTime.asSeconds();
-        isMovingLeft = false;
-        isMovingUp = false;
-        isMovingDown = false;
-    }
-
-    // reset the walking animation if we are not moving
-    if (!(isMovingDown || isMovingLeft || isMovingRight || isMovingUp))
-        source.x = 0;
-
-    // Boundries
-    if (y <= 0)
-        y = 0;
-    if (x <= 0)
-        x = 0;
-    if (y >= HEIGHT-cHeight)
-        y = HEIGHT-cHeight;
-    if (x >= WIDTH-cWidth)
-        x = WIDTH-cWidth;
-
-    // Draw the sprite
-    character.setPosition(x, y);
-    character.setTextureRect(sf::IntRect(source.x * cWidth, source.y * cHeight, cWidth, cHeight));
-    window.draw(character);
-}
+};
 
 int main()
 {
-    setup();
-    // create a clock which will help us keep time and passage of time
-    sf::Clock clock;
-	// Start the game loop
-    while (window.isOpen())
+    sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "My First SFML Game", sf::Style::Titlebar | sf::Style::None);     // Create and initialize the main window
+    sf::Time deltaTime;     // Create a time object to hold a value of time between frames
+    sf::Clock clock;       // Create a clock for us to keep track of the time between frames
+    Character character(&window, &deltaTime);       // Initialize the character
+    while (window.isOpen())     // Start the game loop
     {
-        // Process events
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            // Close window : exit
-            switch(event.type){
-                case sf::Event::Closed:
-                    window.close();
-                    break;
-            }
-
-        }
-
-        // clock and delta time
-        deltaTime = clock.restart();
-        // Clear screen
-        window.clear();
-        window.draw(background);
-        update();
-        // Update the window
-        window.display();
+        deltaTime = clock.restart();    // Get the time between frames
+        window.clear(sf::Color::Cyan);  // Clear the screen and set the background color
+        character.update(); // Update the character
+        window.display();   // Update the window
     }
-
     return EXIT_SUCCESS;
 }

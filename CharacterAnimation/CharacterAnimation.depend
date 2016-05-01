@@ -1,5 +1,9 @@
 # depslib dependency file v1.0
-1461892503 source:/home/smith/JARVIS/C++/CharacterAnimation/main.cpp
+1462058023 source:/home/smith/JARVIS/C++/CharacterAnimation/main.cpp
 	<SFML/Graphics.hpp>
-	<iostream>
+
+1462055837 /home/smith/JARVIS/C++/CharacterAnimation/include/Character.h
+	<SFML/Graphics.hpp>
+
+1462055874 source:/home/smith/JARVIS/C++/CharacterAnimation/src/Character.cpp
 
